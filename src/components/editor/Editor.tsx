@@ -67,7 +67,11 @@ import { Wikilink, type WikilinkStorage } from "./Wikilink";
 import { WikilinkSuggestion } from "./WikilinkSuggestion";
 import { EditorWidthHandles } from "./EditorWidthHandle";
 import { ScratchBlockMath, normalizeBlockMath } from "./MathExtensions";
-import { ScratchTable } from "./TableExtensions";
+import {
+  ScratchTable,
+  ScratchTableCell,
+  ScratchTableHeader,
+} from "./TableExtensions";
 import {
   ScratchImage,
   ObsidianImageEmbed,
@@ -1145,6 +1149,8 @@ export function Editor({
       }),
       TableKit.configure({
         table: false,
+        tableCell: false,
+        tableHeader: false,
       }),
       ScratchTable.configure({
         resizable: false,
@@ -1152,6 +1158,8 @@ export function Editor({
           class: "not-prose",
         },
       }),
+      ScratchTableCell,
+      ScratchTableHeader,
       Frontmatter,
       Markdown.configure({}),
       SearchHighlight.configure({
