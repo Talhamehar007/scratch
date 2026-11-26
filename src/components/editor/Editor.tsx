@@ -15,7 +15,6 @@ import {
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import { TableKit } from "@tiptap/extension-table";
@@ -34,8 +33,7 @@ import {
 import tippy, { type Instance as TippyInstance } from "tippy.js";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { invoke, convertFileSrc } from "@tauri-apps/api/core";
-import { join } from "@tauri-apps/api/path";
+import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { mod, alt, shift, isMac, isWindows } from "../../lib/platform";
 
@@ -70,6 +68,13 @@ import { WikilinkSuggestion } from "./WikilinkSuggestion";
 import { EditorWidthHandles } from "./EditorWidthHandle";
 import { ScratchBlockMath, normalizeBlockMath } from "./MathExtensions";
 import { ScratchTable } from "./TableExtensions";
+import {
+  ScratchImage,
+  ObsidianImageEmbed,
+  computePortableImagePath,
+  getParentDir,
+  type ScratchImageStorage,
+} from "./ImageExtension";
 import { cn } from "../../lib/utils";
 import { plainTextFromMarkdown } from "../../lib/plainText";
 import { Button, IconButton, ToolbarButton, Tooltip } from "../ui";
@@ -1111,10 +1116,11 @@ export function Editor({
           ];
         },
       }),
-      Image.configure({
+      ScratchImage.configure({
         inline: false,
         allowBase64: false,
       }),
+      ObsidianImageEmbed,
       TaskList,
       TaskItem.configure({
         nested: true,
@@ -1209,23 +1215,21 @@ export function Editor({
                   return;
                 }
 
-                // Save clipboard image
+                // Save clipboard image to assets/ and insert a portable relative Markdown path
                 const relativePath = await invoke<string>(
                   "save_clipboard_image",
                   { base64Data: base64 },
                 );
+                const portableSrc = computePortableImagePath(
+                  relativePath,
+                  previewMode ? null : currentNoteIdRef.current,
+                );
 
-                // Construct absolute path using Tauri's join
-                const absolutePath = await join(notesFolder, relativePath);
-
-                // Convert to Tauri asset URL
-                const assetUrl = convertFileSrc(absolutePath);
-
-                // Insert image
+                // Insert image using portable path (ScratchImage resolves asset URL at render time)
                 editorRef.current
                   ?.chain()
                   .focus()
-                  .setImage({ src: assetUrl })
+                  .setImage({ src: portableSrc })
                   .run();
               } catch (error) {
                 console.error("Failed to paste image:", error);
@@ -1308,6 +1312,20 @@ export function Editor({
   useEffect(() => {
     onEditorReady?.(editor);
   }, [editor, onEditorReady]);
+
+  // Sync notes folder and current note directory into editor storage synchronously
+  // so Image NodeViews created during setContent always see the current paths.
+  const notesFolder = notesCtx?.notesFolder ?? null;
+  if (editor) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const imgStorage = (editor.storage as any).image as
+      | ScratchImageStorage
+      | undefined;
+    if (imgStorage) {
+      imgStorage.notesFolder = notesFolder;
+      imgStorage.noteDir = getParentDir(currentNote?.path);
+    }
+  }
 
   // Sync notes list into editor storage for wikilink autocomplete
   useEffect(() => {
@@ -1795,19 +1813,17 @@ export function Editor({
           return;
         }
 
-        // Copy image to assets folder and get relative path (assets/filename.ext)
+        // Copy image to assets folder and insert a portable relative Markdown path
         const relativePath = await invoke<string>("copy_image_to_assets", {
           sourcePath: selected as string,
         });
+        const portableSrc = computePortableImagePath(
+          relativePath,
+          previewMode ? null : currentNoteIdRef.current,
+        );
 
-        // Construct absolute path using Tauri's join
-        const absolutePath = await join(notesFolder, relativePath);
-
-        // Convert to Tauri asset URL
-        const assetUrl = convertFileSrc(absolutePath);
-
-        // Insert image with asset URL
-        editor.chain().focus().setImage({ src: assetUrl }).run();
+        // Insert image using portable path (ScratchImage resolves asset URL at render time)
+        editor.chain().focus().setImage({ src: portableSrc }).run();
       } catch (error) {
         console.error("Failed to add image:", error);
         toast.error("Failed to insert image");
