@@ -3,11 +3,12 @@
 
 ## Table of Contents & Work Log Index
 
-- **Total Separate Work Sessions Logged:** 3
-- **Total Git Commits Created Across All Entries:** 32
+- **Total Separate Work Sessions Logged:** 4
+- **Total Git Commits Created Across All Entries:** 33
 
 | Entry # | Date & Time | Work / Change Title | Agent & Model | Commits Count & Hashes | Jump Link |
 | :---: | :---: | :--- | :--- | :--- | :---: |
+| Entry #4 | 2026-11-26T16:05:47Z | Support Clicking In-Document #anchor Section Links in Editor and Preview Mode (#32) | Antigravity (agy) (Gemini 4 Neon (High)) | 1 Commit (`a8d54bb`) | [Jump to Entry #4](#entry-4) |
 | Entry #3 | 2026-11-26T15:47:34Z | Fix macOS Pre-Setup RunEvent::Opened Launch Race (#31) and Prepare Production Release v1.1.0 | Antigravity (agy) (Gemini 4 Neon (High)) | 2 Commits (`8945365`, `356281c`) | [Jump to Entry #3](#entry-3) |
 | Entry #2 | 2026-11-26T15:30:10Z | Prevent .git/index.lock Collisions via --no-optional-locks and Serialized Mutating Git Commands | Antigravity (agy) (Gemini 4 Neon (High)) | 1 Commit (`7c791b3`) | [Jump to Entry #2](#entry-2) |
 | Entry #1 | 2026-11-26T15:08:30Z | Audit and resolve 29 security, correctness, performance, accessibility, and upstream bugs (Issues #1-#29) | Antigravity (agy) (Gemini 4 Neon (High)) | 29 Commits (`9891888`, `96468d2`, `6def4da`, `026c8e5`, `706ae77`, `108375e`, `aceb369`, `0bb9d53`, `1b3eca6`, `e9c6b78`, `233f591`, `27b7dc9`, `73f92f4`, `2b6c60b`, `d7f851c`, `1941fe1`, `e0d520d`, `b894cdd`, `b1572a4`, `b4ace19`, `369797e`, `3555dcd`, `720f316`, `b0daa60`, `726f229`, `ba7c27f`, `925f930`, `4ad7144`, `6daaad9`) | [Jump to Entry #1](#entry-1) |
@@ -227,5 +228,39 @@ Introduced a `MacLaunchState` mutex coordinating `.setup()`, `RunEvent::Ready`, 
   - `cargo test` in `src-tauri/` — passed (`6 passed; 0 failed`).
   - `cargo clippy --all-targets -- -D warnings` in `src-tauri/` — passed with 0 warnings/errors.
 - **Breaking Changes / Side Effects:** None. Fork updater endpoint now targets `Talhamehar007/scratch` instead of upstream `erictli/scratch`.
+
+---
+
+<a id="entry-4"></a>
+## [Entry #4] 2026-11-26T16:05:47Z — Support Clicking In-Document #anchor Section Links in Editor and Preview Mode (#32)
+
+- **Date & Exact Timestamp:** `2026-11-26T16:05:47Z`
+- **Executed By Agent:** `Antigravity (agy)` | Model: `Gemini 4 Neon (High)`
+- **Category:** `Fixed`
+- **Status:** `committed`
+- **Tier:** `full`
+- **Commits Made in This Specific Work:** `1 Commits (`a8d54bb`)`
+  - Commit `a8d54bb` (`2026-11-26T16:05:44Z`): `fix(editor): support clicking in-document #anchor section links to scroll to headings`
+- **Files Touched Summary:** `1 file changed, 99 insertions(+), 4 deletions(-)`
+
+### 1. In-Depth Executive Summary of Work
+
+Resolved Issue `#32` (`Talhamehar007/scratch#32`), where clicking in-document Markdown `#anchor` / Table of Contents section links (such as `[Part I](#Part%20I%20—%20Executive%20Runbook)` or `[#1](#part-i--summary)`) did nothing in Scratch's Editor and Preview windows. Previously, `handleEditorClick` called `e.preventDefault()` on all `<a>` clicks and routed Cmd/Ctrl+Click through `normalizeUrl()` (which turned `#section` into `https://#section`) and `openUrl()`.
+
+Updated `normalizeUrl()` to preserve `#fragment` links untouched, added `slugifyHeading()` and `scrollToHeadingAnchor()` supporting exact decoded heading text (Obsidian style), GitHub-style heading slugs, explicit DOM `id` targets, and legacy prefix-number anchors (`#turn-N` / `#entry-N`), and handled `#anchor` clicks directly in `handleEditorClick` (with or without Cmd/Ctrl, matching wikilink click UX) with smooth scrolling.
+
+### 2. Exhaustive Change-by-Change & File Breakdown
+
+- **`src/components/editor/Editor.tsx`** (`+99 / -4`):
+  - **Functions / Classes / Symbols Modified:** `normalizeUrl`, `slugifyHeading` (new), `scrollToHeadingAnchor` (new), `Editor` (`handleEditorClick`).
+  - **Detailed Breakdown of Changes:** Returned `#...` fragments unchanged in `normalizeUrl()`; implemented `slugifyHeading()` and `scrollToHeadingAnchor()` to locate matching heading elements (`h1`–`h6`) or `[id]` nodes inside `editor.view.dom` via decoded heading text, GitHub slug, or prefix-number fallback (`#turn-N`, `#entry-N`) and invoke `scrollIntoView({ behavior: "smooth", block: "start" })`; updated `handleEditorClick` to intercept `href.startsWith("#")` before external URL handling and display a toast if the target section is missing.
+  - **Reason & Technical Impact:** Enables working in-document TOC and cross-section links across both the main editor and standalone Preview windows without breaking external link safety checks.
+
+### 3. Verification & System Impact
+
+- **Tests & Commands Run:**
+  - `npm run build` (`tsc && vite build`) — passed with 0 TypeScript or Vite errors.
+  - Node.js `@tiptap/markdown` `MarkdownManager` parse check — verified `#Part%20I%20%E2%80%94%20Executive%20Runbook` and `#part-i--executive-runbook` links preserve exact `href` attributes through TipTap Link parsing.
+- **Breaking Changes / Side Effects:** None. External links (`http://`, `https://`, `mailto:`) continue to require Cmd/Ctrl+Click and scheme validation.
 
 ---

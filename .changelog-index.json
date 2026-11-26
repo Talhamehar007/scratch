@@ -1,10 +1,10 @@
 {
   "schema": 2,
   "file": "CHANGELOG.md",
-  "generated_at": "2026-11-27T05:18:43Z",
+  "generated_at": "2026-11-27T05:18:44Z",
   "totals": {
-    "entries": 3,
-    "commits": 32
+    "entries": 4,
+    "commits": 33
   },
   "entries": [
     {
@@ -74,6 +74,19 @@
         "356281c"
       ],
       "files": "6 files changed, 203 insertions(+), 65 deletions(-)"
+    },
+    {
+      "number": 4,
+      "title": "Support Clicking In-Document #anchor Section Links in Editor and Preview Mode (#32)",
+      "timestamp": "2026-11-26T16:05:47Z",
+      "agent": "Antigravity (agy)",
+      "model": "Gemini 4 Neon (High)",
+      "status": "committed",
+      "tier": "full",
+      "commits": [
+        "a8d54bb"
+      ],
+      "files": "1 file changed, 99 insertions(+), 4 deletions(-)"
     }
   ]
 }
