@@ -3,11 +3,12 @@
 
 ## Table of Contents & Work Log Index
 
-- **Total Separate Work Sessions Logged:** 1
-- **Total Git Commits Created Across All Entries:** 29
+- **Total Separate Work Sessions Logged:** 2
+- **Total Git Commits Created Across All Entries:** 30
 
 | Entry # | Date & Time | Work / Change Title | Agent & Model | Commits Count & Hashes | Jump Link |
 | :---: | :---: | :--- | :--- | :--- | :---: |
+| Entry #2 | 2026-11-26T15:30:10Z | Prevent .git/index.lock Collisions via --no-optional-locks and Serialized Mutating Git Commands | Antigravity (agy) (Gemini 4 Neon (High)) | 1 Commit (`7c791b3`) | [Jump to Entry #2](#entry-2) |
 | Entry #1 | 2026-11-26T15:08:30Z | Audit and resolve 29 security, correctness, performance, accessibility, and upstream bugs (Issues #1-#29) | Antigravity (agy) (Gemini 4 Neon (High)) | 29 Commits (`9891888`, `96468d2`, `6def4da`, `026c8e5`, `706ae77`, `108375e`, `aceb369`, `0bb9d53`, `1b3eca6`, `e9c6b78`, `233f591`, `27b7dc9`, `73f92f4`, `2b6c60b`, `d7f851c`, `1941fe1`, `e0d520d`, `b894cdd`, `b1572a4`, `b4ace19`, `369797e`, `3555dcd`, `720f316`, `b0daa60`, `726f229`, `ba7c27f`, `925f930`, `4ad7144`, `6daaad9`) | [Jump to Entry #1](#entry-1) |
 
 ---
@@ -133,5 +134,47 @@ Key technical pillars delivered:
   - Node.js native TypeScript round-trip verification suites via `@tiptap/markdown` `MarkdownManager` — verified table `<br>` line breaks (#15), task lists in table cells (#19), table column alignments (#22), and portable/Obsidian image paths (#18); all assertions passed.
   - `gh issue list -R Talhamehar007/scratch --state open` — returned `[]` (all 29 issues closed with commit references).
 - **Breaking Changes / Side Effects:** None. Existing notes containing legacy `http://asset.localhost/...` image URLs continue to render normally alongside portable relative Markdown paths and Obsidian `![[image.ext]]` embeds.
+
+---
+
+<a id="entry-2"></a>
+## [Entry #2] 2026-11-26T15:30:10Z — Prevent .git/index.lock Collisions via --no-optional-locks and Serialized Mutating Git Commands
+
+- **Date & Exact Timestamp:** `2026-11-26T15:30:10Z`
+- **Executed By Agent:** `Antigravity (agy)` | Model: `Gemini 4 Neon (High)`
+- **Category:** `Fixed`
+- **Status:** `committed`
+- **Tier:** `full`
+- **Commits Made in This Specific Work:** `1 Commits (`7c791b3`)`
+  - Commit `7c791b3` (`2026-11-26T15:30:03Z`): `fix(git): disable optional locks for git status and serialize mutating git commands`
+- **Files Touched Summary:** `2 files changed, 102 insertions(+), 11 deletions(-)`
+
+### 1. In-Depth Executive Summary of Work
+
+Resolved Issue `#30` (`Talhamehar007/scratch#30`), where committing changes inside Scratch on slow, virtual, or cloud-backed vaults (such as Cryptomator WebDAV mounts or iCloud Drive) could fail during staging with `fatal: Unable to create '.../.git/index.lock': File exists`.
+
+Investigation identified two root causes in the Rust backend:
+1. `git::get_status()` invoked `git status --porcelain` without `--no-optional-locks` / `GIT_OPTIONAL_LOCKS=0`, causing routine background status refreshes (triggered 1s after every `file-change` and on the 60s poll) to acquire `.git/index.lock` to refresh Git's stat cache. On slow WebDAV vaults, this directly collided with user-initiated `git add -A` and risked leaving stale 0-byte `.git/index.lock` files if interrupted.
+2. Mutating Tauri git commands (`git_init_repo`, `git_commit`, `git_push`, `git_fetch`, `git_pull`, and remote management) ran concurrently on `spawn_blocking` with no synchronization, allowing periodic background `git fetch` calls to race with user commits/pulls/pushes.
+
+Added `git_readonly_cmd()` (`GIT_OPTIONAL_LOCKS=0` + `--no-optional-locks`) for read-only git inspection, added an async `tokio::sync::Mutex<()>` (`git_op_lock`) to `AppState` to serialize mutating git commands without blocking UI status refreshes, appended a concise recovery hint when staging or committing hits an existing `.git/index.lock`, and added Rust unit tests covering both behaviors.
+
+### 2. Exhaustive Change-by-Change & File Breakdown
+
+- **`src-tauri/src/git.rs`** (`+90 / -11`):
+  - **Functions / Classes / Symbols Modified:** `git_readonly_cmd`, `get_status`, `get_remote_url`, `commit_all`, `format_lock_hint_if_needed`, `tests::get_status_succeeds_without_touching_index_lock`, `tests::commit_all_appends_stale_lock_hint_when_index_lock_exists`.
+  - **Detailed Breakdown of Changes:** Added `git_readonly_cmd()` setting `GIT_OPTIONAL_LOCKS=0` and `--no-optional-locks` and switched `get_status()` (`branch --show-current`, `remote`, `status --porcelain`, `rev-list`) and `get_remote_url()` to use it; added `format_lock_hint_if_needed()` and wired it into `commit_all()` staging and commit error paths so existing `.git/index.lock` errors include actionable stale-lock guidance; added two unit tests verifying status works when `.git/index.lock` exists and `commit_all()` formats the stale-lock hint cleanly.
+  - **Reason & Technical Impact:** Prevents background status refreshes from creating `.git/index.lock` or blocking/failing when an index lock exists, and gives users clear recovery instructions when a pre-existing stale lock blocks commits.
+- **`src-tauri/src/lib.rs`** (`+12 / -0`):
+  - **Functions / Classes / Symbols Modified:** `AppState`, `AppState::default`, `git_init_repo`, `git_commit`, `git_push`, `git_fetch`, `git_pull`, `git_add_remote`, `git_set_remote_url`, `git_remove_remote`, `git_push_with_upstream`, `run`.
+  - **Detailed Breakdown of Changes:** Added `pub git_op_lock: Arc<tokio::sync::Mutex<()>>` to `AppState` (initialized in both `Default::default()` and `run()`), and acquired `state.git_op_lock.clone().lock_owned().await` across all 9 mutating git Tauri commands while keeping read-only `git_get_status` non-blocking.
+  - **Reason & Technical Impact:** Serializes concurrent mutating git operations (e.g., 60s background `git_fetch` vs user `git_commit`/`git_pull`/`git_push`) without stalling Tokio blocking threads or UI status refreshes.
+
+### 3. Verification & System Impact
+
+- **Tests & Commands Run:**
+  - `cargo test` in `src-tauri/` — passed (`6 passed; 0 failed`, including the 2 new tests `git::tests::get_status_succeeds_without_touching_index_lock` and `git::tests::commit_all_appends_stale_lock_hint_when_index_lock_exists`).
+  - `cargo clippy --all-targets -- -D warnings` in `src-tauri/` — passed with 0 warnings/errors.
+- **Breaking Changes / Side Effects:** None. Read-only `git status` no longer rewrites `.git/index` stat caches opportunistically, which is the standard practice used by VS Code, Lazygit, and other GUI Git clients to avoid lock contention.
 
 ---
