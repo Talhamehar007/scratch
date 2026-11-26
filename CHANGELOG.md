@@ -3,11 +3,12 @@
 
 ## Table of Contents & Work Log Index
 
-- **Total Separate Work Sessions Logged:** 2
-- **Total Git Commits Created Across All Entries:** 30
+- **Total Separate Work Sessions Logged:** 3
+- **Total Git Commits Created Across All Entries:** 32
 
 | Entry # | Date & Time | Work / Change Title | Agent & Model | Commits Count & Hashes | Jump Link |
 | :---: | :---: | :--- | :--- | :--- | :---: |
+| Entry #3 | 2026-11-26T15:47:34Z | Fix macOS Pre-Setup RunEvent::Opened Launch Race (#31) and Prepare Production Release v1.1.0 | Antigravity (agy) (Gemini 4 Neon (High)) | 2 Commits (`8945365`, `356281c`) | [Jump to Entry #3](#entry-3) |
 | Entry #2 | 2026-11-26T15:30:10Z | Prevent .git/index.lock Collisions via --no-optional-locks and Serialized Mutating Git Commands | Antigravity (agy) (Gemini 4 Neon (High)) | 1 Commit (`7c791b3`) | [Jump to Entry #2](#entry-2) |
 | Entry #1 | 2026-11-26T15:08:30Z | Audit and resolve 29 security, correctness, performance, accessibility, and upstream bugs (Issues #1-#29) | Antigravity (agy) (Gemini 4 Neon (High)) | 29 Commits (`9891888`, `96468d2`, `6def4da`, `026c8e5`, `706ae77`, `108375e`, `aceb369`, `0bb9d53`, `1b3eca6`, `e9c6b78`, `233f591`, `27b7dc9`, `73f92f4`, `2b6c60b`, `d7f851c`, `1941fe1`, `e0d520d`, `b894cdd`, `b1572a4`, `b4ace19`, `369797e`, `3555dcd`, `720f316`, `b0daa60`, `726f229`, `ba7c27f`, `925f930`, `4ad7144`, `6daaad9`) | [Jump to Entry #1](#entry-1) |
 
@@ -176,5 +177,55 @@ Added `git_readonly_cmd()` (`GIT_OPTIONAL_LOCKS=0` + `--no-optional-locks`) for 
   - `cargo test` in `src-tauri/` — passed (`6 passed; 0 failed`, including the 2 new tests `git::tests::get_status_succeeds_without_touching_index_lock` and `git::tests::commit_all_appends_stale_lock_hint_when_index_lock_exists`).
   - `cargo clippy --all-targets -- -D warnings` in `src-tauri/` — passed with 0 warnings/errors.
 - **Breaking Changes / Side Effects:** None. Read-only `git status` no longer rewrites `.git/index` stat caches opportunistically, which is the standard practice used by VS Code, Lazygit, and other GUI Git clients to avoid lock contention.
+
+---
+
+<a id="entry-3"></a>
+## [Entry #3] 2026-11-26T15:47:34Z — Fix macOS Pre-Setup RunEvent::Opened Launch Race (#31) and Prepare Production Release v1.1.0
+
+- **Date & Exact Timestamp:** `2026-11-26T15:47:34Z`
+- **Executed By Agent:** `Antigravity (agy)` | Model: `Gemini 4 Neon (High)`
+- **Category:** `Changed`
+- **Status:** `committed`
+- **Tier:** `full`
+- **Commits Made in This Specific Work:** `2 Commits (`8945365`, `356281c`)`
+  - Commit `8945365` (`2026-11-26T15:45:48Z`): `fix(macos): queue pre-setup RunEvent::Opened paths and coordinate Ready/Opened launch state`
+  - Commit `356281c` (`2026-11-26T15:47:34Z`): `chore(release): bump version to 1.1.0 and point updater endpoint to fork`
+- **Files Touched Summary:** `6 files changed, 203 insertions(+), 65 deletions(-)`
+
+### 1. In-Depth Executive Summary of Work
+
+Resolved Issue `#31` (`Talhamehar007/scratch#31`, follow-up to `#29` / upstream `erictli/scratch#92`) and prepared production release `v1.1.0` across all manifests and lockfiles.
+
+Live event tracing on macOS revealed why opening an external Markdown file on cold start via Finder or `open -a Scratch file.md` still opened both the preview window and the main window: Tauri v2 / AppKit delivers `RunEvent::Opened` **before** `.setup()` executes and registers `AppState`. As a result, `try_state::<AppState>()` returned `None` inside `RunEvent::Opened`, causing `has_notes_folder` to evaluate to `false` and `try_select_in_notes_folder()` to fail on cold start. Flag-only LaunchServices CLI arguments (such as `-psn_...`) and `.setup()` I/O delays on slow WebDAV/iCloud mounts also risked showing `main` prematurely.
+
+Introduced a `MacLaunchState` mutex coordinating `.setup()`, `RunEvent::Ready`, `RunEvent::Opened`, and `RunEvent::Reopen`: pre-setup `RunEvent::Opened` file paths are queued into `pending_opened_paths` and drained inside `.setup()` immediately after `AppState` is registered, flag-only CLI arguments are ignored, and deferred main-window display is scheduled only after `RunEvent::Ready` when no launch files were opened. Empirically verified on macOS via CoreGraphics `CGWindowListCopyWindowInfo` on-screen window checks across all three launch scenarios, then bumped Scratch to `v1.1.0` across all Node/Cargo/Tauri manifests and pointed the Tauri updater endpoint to `Talhamehar007/scratch`.
+
+### 2. Exhaustive Change-by-Change & File Breakdown
+
+- **`src-tauri/src/lib.rs`** (`+196 / -58`):
+  - **Functions / Classes / Symbols Modified:** `run`, `MacLaunchState` (new local macOS state struct inside `run`).
+  - **Detailed Breakdown of Changes:** Replaced the `150ms` `.setup()` sleep and `startup_instant` atomic boolean with `Arc<Mutex<MacLaunchState>>` (`pending_opened_paths`, `deferred_main_show`, `opened_in_launch`, `opened_preview_only`, `main_shown_for_user`, `ready_instant`). Ignored flag-only CLI arguments via `has_positional_cli_arg`; queued pre-setup `RunEvent::Opened` Markdown paths when `AppState` is not yet registered and drained them in `.setup()` after `app.manage(state)`; moved the deferred main-window show to `RunEvent::Ready` (dispatched via `run_on_main_thread`); guarded `RunEvent::Reopen` against cold-start races.
+  - **Reason & Technical Impact:** Eliminates the duplicate main window on macOS cold-start Markdown launches and ensures cold-start Finder launches of notes inside `notes_folder` properly select in the main window.
+- **`package.json`** (`+1 / -1`), **`package-lock.json`** (`+2 / -2`), **`src-tauri/Cargo.toml`** (`+1 / -1`), **`src-tauri/Cargo.lock`** (`+1 / -1`):
+  - **Functions / Classes / Symbols Modified:** Package version metadata.
+  - **Detailed Breakdown of Changes:** Bumped version from `1.0.0` to `1.1.0` consistently across frontend and Rust manifests and lockfiles.
+  - **Reason & Technical Impact:** Prepares synchronized semantic version `v1.1.0` for tagging, CLI `--version` output, and release artifact naming.
+- **`src-tauri/tauri.conf.json`** (`+2 / -2`):
+  - **Functions / Classes / Symbols Modified:** `version`, `plugins.updater.endpoints`.
+  - **Detailed Breakdown of Changes:** Bumped bundle version to `1.1.0` and updated updater endpoint to `https://github.com/Talhamehar007/scratch/releases/latest/download/latest.json`.
+  - **Reason & Technical Impact:** Ensures macOS/desktop bundles report `1.1.0` and prevents fork installations from auto-updating back to upstream releases.
+
+### 3. Verification & System Impact
+
+- **Tests & Commands Run:**
+  - Live macOS CoreGraphics (`CGWindowListCopyWindowInfo` `.optionOnScreenOnly`) verification on built `Scratch.app`:
+    - Cold-start `open -a Scratch.app /tmp/scratch-repro-1.md` — `COUNT=1 NAMES=["scratch-repro-1.md — Scratch"]` (passed).
+    - Second external file while preview-only — `COUNT=2 NAMES=["scratch-repro-2.md — Scratch", "scratch-repro-1.md — Scratch"]` (passed).
+    - Cold-start normal launch `open -a Scratch.app` — `COUNT=1 NAMES=["Scratch"]` (passed).
+  - `npm run build` (`tsc && vite build`) — passed with 0 errors.
+  - `cargo test` in `src-tauri/` — passed (`6 passed; 0 failed`).
+  - `cargo clippy --all-targets -- -D warnings` in `src-tauri/` — passed with 0 warnings/errors.
+- **Breaking Changes / Side Effects:** None. Fork updater endpoint now targets `Talhamehar007/scratch` instead of upstream `erictli/scratch`.
 
 ---

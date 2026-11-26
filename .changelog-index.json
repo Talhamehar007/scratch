@@ -1,10 +1,10 @@
 {
   "schema": 2,
   "file": "CHANGELOG.md",
-  "generated_at": "2026-11-27T05:18:42Z",
+  "generated_at": "2026-11-27T05:18:43Z",
   "totals": {
-    "entries": 2,
-    "commits": 30
+    "entries": 3,
+    "commits": 32
   },
   "entries": [
     {
@@ -60,6 +60,20 @@
         "7c791b3"
       ],
       "files": "2 files changed, 102 insertions(+), 11 deletions(-)"
+    },
+    {
+      "number": 3,
+      "title": "Fix macOS Pre-Setup RunEvent::Opened Launch Race (#31) and Prepare Production Release v1.1.0",
+      "timestamp": "2026-11-26T15:47:34Z",
+      "agent": "Antigravity (agy)",
+      "model": "Gemini 4 Neon (High)",
+      "status": "committed",
+      "tier": "full",
+      "commits": [
+        "8945365",
+        "356281c"
+      ],
+      "files": "6 files changed, 203 insertions(+), 65 deletions(-)"
     }
   ]
 }
