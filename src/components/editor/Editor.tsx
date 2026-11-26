@@ -2352,6 +2352,8 @@ export function Editor({
         data-tauri-drag-region
       >
         <div
+          aria-hidden={Boolean(focusMode)}
+          inert={Boolean(focusMode)}
           className={`titlebar-no-drag flex items-center gap-1 min-w-0 transition-opacity duration-400 ${needsSidebarDelay ? "delay-200" : ""} ${focusMode ? "opacity-0 pointer-events-none" : "opacity-100"}`}
         >
           {onToggleSidebar && (
@@ -2372,6 +2374,8 @@ export function Editor({
           </span>
         </div>
         <div
+          aria-hidden={Boolean(focusMode)}
+          inert={Boolean(focusMode)}
           className={`titlebar-no-drag flex items-center gap-px shrink-0 transition-opacity duration-400 ${needsSidebarDelay ? "delay-200" : ""} ${focusMode ? "opacity-0 pointer-events-none" : "opacity-100"}`}
         >
           {hasExternalChanges ? (
@@ -2544,6 +2548,8 @@ export function Editor({
       {/* Format Bar – transition only after initial mount to avoid height animation on note load */}
       <div
         data-format-bar
+        aria-hidden={Boolean(focusMode || sourceMode)}
+        inert={Boolean(focusMode || sourceMode)}
         className={`${focusMode || sourceMode ? "opacity-0 max-h-0 overflow-hidden pointer-events-none" : "opacity-100 max-h-20"} ${hasTransitioned ? `transition-all duration-400 ${needsSidebarDelay ? "delay-200" : ""}` : ""}`}
       >
         <FormatBar
