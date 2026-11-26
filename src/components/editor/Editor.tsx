@@ -16,7 +16,6 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
 import { TableKit } from "@tiptap/extension-table";
 import { Markdown } from "@tiptap/markdown";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
@@ -72,6 +71,7 @@ import {
   ScratchTableCell,
   ScratchTableHeader,
 } from "./TableExtensions";
+import { ScratchTaskItem } from "./TaskItemExtension";
 import {
   ScratchImage,
   ObsidianImageEmbed,
@@ -1144,7 +1144,7 @@ export function Editor({
       }),
       ObsidianImageEmbed,
       TaskList,
-      TaskItem.configure({
+      ScratchTaskItem.configure({
         nested: true,
       }),
       TableKit.configure({
