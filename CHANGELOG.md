@@ -3,11 +3,12 @@
 
 ## Table of Contents & Work Log Index
 
-- **Total Separate Work Sessions Logged:** 4
-- **Total Git Commits Created Across All Entries:** 33
+- **Total Separate Work Sessions Logged:** 5
+- **Total Git Commits Created Across All Entries:** 34
 
 | Entry # | Date & Time | Work / Change Title | Agent & Model | Commits Count & Hashes | Jump Link |
 | :---: | :---: | :--- | :--- | :--- | :---: |
+| Entry #5 | 2026-11-26T16:13:45Z | Release Hotfix v1.1.1 (Version Bump for In-Document #anchor Links) | Antigravity (agy) (Gemini 4 Neon (High)) | 1 Commit (`2cc2db5`) | [Jump to Entry #5](#entry-5) |
 | Entry #4 | 2026-11-26T16:05:47Z | Support Clicking In-Document #anchor Section Links in Editor and Preview Mode (#32) | Antigravity (agy) (Gemini 4 Neon (High)) | 1 Commit (`a8d54bb`) | [Jump to Entry #4](#entry-4) |
 | Entry #3 | 2026-11-26T15:47:34Z | Fix macOS Pre-Setup RunEvent::Opened Launch Race (#31) and Prepare Production Release v1.1.0 | Antigravity (agy) (Gemini 4 Neon (High)) | 2 Commits (`8945365`, `356281c`) | [Jump to Entry #3](#entry-3) |
 | Entry #2 | 2026-11-26T15:30:10Z | Prevent .git/index.lock Collisions via --no-optional-locks and Serialized Mutating Git Commands | Antigravity (agy) (Gemini 4 Neon (High)) | 1 Commit (`7c791b3`) | [Jump to Entry #2](#entry-2) |
@@ -262,5 +263,38 @@ Updated `normalizeUrl()` to preserve `#fragment` links untouched, added `slugify
   - `npm run build` (`tsc && vite build`) — passed with 0 TypeScript or Vite errors.
   - Node.js `@tiptap/markdown` `MarkdownManager` parse check — verified `#Part%20I%20%E2%80%94%20Executive%20Runbook` and `#part-i--executive-runbook` links preserve exact `href` attributes through TipTap Link parsing.
 - **Breaking Changes / Side Effects:** None. External links (`http://`, `https://`, `mailto:`) continue to require Cmd/Ctrl+Click and scheme validation.
+
+---
+
+<a id="entry-5"></a>
+## [Entry #5] 2026-11-26T16:13:45Z — Release Hotfix v1.1.1 (Version Bump for In-Document #anchor Links)
+
+- **Date & Exact Timestamp:** `2026-11-26T16:13:45Z`
+- **Executed By Agent:** `Antigravity (agy)` | Model: `Gemini 4 Neon (High)`
+- **Category:** `Changed`
+- **Status:** `committed`
+- **Tier:** `full`
+- **Commits Made in This Specific Work:** `1 Commits (`2cc2db5`)`
+  - Commit `2cc2db5` (`2026-11-26T16:13:45Z`): `chore(release): bump version to 1.1.1`
+- **Files Touched Summary:** `5 files changed, 6 insertions(+), 6 deletions(-)`
+
+### 1. In-Depth Executive Summary of Work
+
+Prepared hotfix release `v1.1.1` on `Talhamehar007/scratch` to ship Issue `#32` (`a8d54bb`, in-document `#anchor` section link scrolling in Editor and Preview mode) in a versioned macOS bundle and GitHub Release. Bumped package and bundle versions consistently from `1.1.0` to `1.1.1` across Node, Cargo, and Tauri manifests and lockfiles.
+
+### 2. Exhaustive Change-by-Change & File Breakdown
+
+- **`package.json`** (`+1 / -1`), **`package-lock.json`** (`+2 / -2`), **`src-tauri/Cargo.toml`** (`+1 / -1`), **`src-tauri/Cargo.lock`** (`+1 / -1`), **`src-tauri/tauri.conf.json`** (`+1 / -1`):
+  - **Functions / Classes / Symbols Modified:** Package and Tauri bundle version metadata.
+  - **Detailed Breakdown of Changes:** Bumped version from `1.1.0` to `1.1.1` across all 5 manifest and lockfile locations.
+  - **Reason & Technical Impact:** Synchronizes CLI `--version`, macOS bundle metadata, and GitHub Release artifacts for hotfix tag `v1.1.1`.
+
+### 3. Verification & System Impact
+
+- **Tests & Commands Run:**
+  - `npm run build` (`tsc && vite build`) — passed with 0 errors.
+  - `cargo test` in `src-tauri/` — passed (`6 passed; 0 failed`).
+  - `cargo clippy --all-targets -- -D warnings` in `src-tauri/` — passed with 0 warnings/errors.
+- **Breaking Changes / Side Effects:** None.
 
 ---

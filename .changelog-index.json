@@ -1,10 +1,10 @@
 {
   "schema": 2,
   "file": "CHANGELOG.md",
-  "generated_at": "2026-11-27T05:18:44Z",
+  "generated_at": "2026-11-27T05:18:46Z",
   "totals": {
-    "entries": 4,
-    "commits": 33
+    "entries": 5,
+    "commits": 34
   },
   "entries": [
     {
@@ -87,6 +87,19 @@
         "a8d54bb"
       ],
       "files": "1 file changed, 99 insertions(+), 4 deletions(-)"
+    },
+    {
+      "number": 5,
+      "title": "Release Hotfix v1.1.1 (Version Bump for In-Document #anchor Links)",
+      "timestamp": "2026-11-26T16:13:45Z",
+      "agent": "Antigravity (agy)",
+      "model": "Gemini 4 Neon (High)",
+      "status": "committed",
+      "tier": "full",
+      "commits": [
+        "2cc2db5"
+      ],
+      "files": "5 files changed, 6 insertions(+), 6 deletions(-)"
     }
   ]
 }
