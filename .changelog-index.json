@@ -1,0 +1,52 @@
+{
+  "schema": 2,
+  "file": "CHANGELOG.md",
+  "generated_at": "2026-11-27T05:18:41Z",
+  "totals": {
+    "entries": 1,
+    "commits": 29
+  },
+  "entries": [
+    {
+      "number": 1,
+      "title": "Audit and resolve 29 security, correctness, performance, accessibility, and upstream bugs (Issues #1-#29)",
+      "timestamp": "2026-11-26T15:08:30Z",
+      "agent": "Antigravity (agy)",
+      "model": "Gemini 4 Neon (High)",
+      "status": "committed",
+      "tier": "full",
+      "commits": [
+        "9891888",
+        "96468d2",
+        "6def4da",
+        "026c8e5",
+        "706ae77",
+        "108375e",
+        "aceb369",
+        "0bb9d53",
+        "1b3eca6",
+        "e9c6b78",
+        "233f591",
+        "27b7dc9",
+        "73f92f4",
+        "2b6c60b",
+        "d7f851c",
+        "1941fe1",
+        "e0d520d",
+        "b894cdd",
+        "b1572a4",
+        "b4ace19",
+        "369797e",
+        "3555dcd",
+        "720f316",
+        "b0daa60",
+        "726f229",
+        "ba7c27f",
+        "925f930",
+        "4ad7144",
+        "6daaad9"
+      ],
+      "files": "19 files changed, +1967, -427"
+    }
+  ]
+}
